@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="lockedValues" format="reference"/>
+    
+    <attr name="lockedValuesDependencyKeys" format="reference"/>
+    
+	<declare-styleable name="CustomListPreference">
+		<attr name="lockedValues" />
+		<attr name="lockedValuesDependencyKeys" />
+	</declare-styleable>
+</resources>

@@ -1,0 +1,11 @@
+<resources>
+
+    <string name="app_name">MyAppFactory ListPreference</string>
+    <string name="cancel">Cancel</string>
+    <string name="done">Done</string>
+    <string name="close">Close</string>
+    <string name="buy">Buy</string>
+    <string name="iapDialogTitle">Purchase Item</string>
+    <string name="iapDialogMessage">This item can be unlocked by purchasing it.</string>
+
+</resources>
