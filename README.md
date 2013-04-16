@@ -1,3 +1,7 @@
+![](http://imageshack.us/scaled/medium/259/device20130415220640.png)
+
+![](http://imageshack.us/scaled/medium/853/device20130415220617.png)
+
 ###What is this?###
 CustomPreferences is collection of (right now, only two) Android preference classes that provide common features that are missing from the standard list of preference classes available in the SDK.
 
