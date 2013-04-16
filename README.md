@@ -59,6 +59,18 @@ Then, you can do this:
             customPreference:lockedValuesDependencyKeys="@array/myArrayOfLockedValuesDependencyKeyValues"
             valuesDataType="0"/>
 ```
+
+...or if you do not extend the CustomListPreference class and would just want to use the defaults...
+```
+<com.myappfactory.preferences.CustomListPreference android:key="@string/myPreferenceKey"
+            android:title="@string/myTitle"
+            android:summary="@string/mySummary"
+            android:entries="@array/myEntries"
+            android:entryValues="@array/myValues"
+            android:defaultValue="my_default_value_as_string"
+            valuesDataType="0"/>
+```
+
 > *valuesDataType* can be 0 (String), 1 (Integer), 2 (Float), 3 (Long). This basically tells CustomListPreference to save the value of the selected list item as that type
 
 ####TimePreference####
