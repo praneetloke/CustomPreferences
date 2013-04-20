@@ -1,4 +1,5 @@
-bin/**
+bin/*
+!bin/custompreferences.jar
 gen/**
 .classpath
 .project
