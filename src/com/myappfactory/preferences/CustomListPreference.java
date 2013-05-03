@@ -145,7 +145,7 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 	
 	private void persistedValue () {
 		if (TextUtils.isEmpty(mDefaultValue)) {
-			mPersistedStringValue = getPersistedString(mDefaultValue);
+			mPersistedStringValue = mPrefs.getString(mKey, mDefaultValue);
 			
 			return;
 		}
@@ -153,17 +153,17 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 		try {
 			switch (mValuesDataType) {
 			case INT:
-				mPersistedIntValue = getPersistedInt(Integer.valueOf(mDefaultValue));
+				mPersistedIntValue = mPrefs.getInt(mKey, Integer.valueOf(mDefaultValue));
 				break;
 			case FLOAT:
-				mPersistedFloatValue = getPersistedFloat(Float.valueOf(mDefaultValue));
+				mPersistedFloatValue = mPrefs.getFloat(mKey, Float.valueOf(mDefaultValue));
 				break;
 			case LONG:
-				mPersistedLongValue = getPersistedLong(Long.valueOf(mDefaultValue));
+				mPersistedLongValue = mPrefs.getLong(mKey, Long.valueOf(mDefaultValue));
 				break;
 			case 0:
 			default:
-				mPersistedStringValue = getPersistedString(mDefaultValue);
+				mPersistedStringValue = mPrefs.getString(mKey, mDefaultValue);
 				break;
 			}
 		}
@@ -362,9 +362,13 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 	}
 
 	private void setTypedValue (String value) {
+		SharedPreferences.Editor editor = mPrefs.edit();
+		
 		//if the value is empty, set the value as a string and return
 		if (TextUtils.isEmpty(value)) {
-			persistString(value);
+			editor.putString(mKey, value);
+			
+			mPersistedStringValue = value;
 			
 			return;
 		}
@@ -372,24 +376,45 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 		try {
 			switch (mValuesDataType) {
 			case INT:
-				persistInt(Integer.valueOf(value));
+				int _intValue = Integer.valueOf(value);
+				
+				editor.putInt(mKey, _intValue);
+				
+				mPersistedIntValue = _intValue;
 				break;
 			case FLOAT:
-				persistFloat(Float.valueOf(value));
+				float _floatValue = Float.valueOf(value);
+				
+				editor.putFloat(mKey, _floatValue);
+				
+				mPersistedFloatValue = _floatValue;
 				break;
 			case LONG:
-				persistLong(Long.valueOf(value));
+				long _longValue = Long.valueOf(value);
+				
+				editor.putLong(mKey, _longValue);
+				
+				mPersistedLongValue = _longValue;
 				break;
 			case 0:
 			default:
-				persistString(value);
+				editor.putString(mKey, value);
+				
+				mPersistedStringValue = value;
+				
 				break;
 			}
 		}
 		catch (NumberFormatException ex) {
 			Log.e(TAG, String.format("Could not parse value in to selected data type. Falling back to storing as a string."));
 
-			persistString(value);
+			editor.putString(mKey, value);
+			
+			mPersistedStringValue = value;
+		}
+		finally {
+			//commit right away!
+			editor.commit();
 		}
 	}
 }
