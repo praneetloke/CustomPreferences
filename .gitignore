@@ -3,3 +3,6 @@ bin/*
 gen/**
 .classpath
 .project
+build/
+gen/
+
