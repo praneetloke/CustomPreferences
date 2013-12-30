@@ -1,10 +1,7 @@
 package com.myappfactory.preferences;
 
-import com.myappfactory.interfaces.IPurchase;
-import com.myappfactory.listpreference.R;
-
-import android.app.AlertDialog.Builder;
 import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -22,6 +19,14 @@ import android.widget.BaseAdapter;
 import android.widget.CompoundButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
+
+import com.myappfactory.interfaces.DynamicEntriesProvider;
+import com.myappfactory.interfaces.DynamicEntryValuesProvider;
+import com.myappfactory.interfaces.IPurchase;
+import com.myappfactory.listpreference.R;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 public class CustomListPreference extends ListPreference implements IPurchase {
 	private static final String TAG = "CustomListPreference";
@@ -45,10 +50,15 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 	private long mPersistedLongValue;
 	private String mPersistedStringValue;
 	
-	private CharSequence[] entries;
-	private CharSequence[] entryValues;
+	private CharSequence[] mEntries;
+	private CharSequence[] mEntryValues;
 	private CharSequence[] lockedValues;
 	private CharSequence[] lockedValuesDependencyKeys;
+    private String dynamicEntriesProviderName;
+    private String dynamicEntryValuesProviderName;
+
+    private DynamicEntriesProvider mDynamicEntriesProvider;
+    private DynamicEntryValuesProvider mDynamicEntryValuesProvider;
 
 	/**
 	 * Finals
@@ -85,7 +95,13 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 		TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.CustomListPreference);
 		lockedValues = typedArray.getTextArray(R.styleable.CustomListPreference_lockedValues);
 		lockedValuesDependencyKeys = typedArray.getTextArray(R.styleable.CustomListPreference_lockedValuesDependencyKeys);
+        dynamicEntriesProviderName = typedArray.getString(R.styleable.CustomListPreference_dynamicEntriesProvider);
+        dynamicEntryValuesProviderName = typedArray.getString(R.styleable.CustomListPreference_dynamicEntryValuesProvider);
 		typedArray.recycle();
+
+        if (dynamicEntriesProviderName != null && dynamicEntryValuesProviderName != null) {
+            initDynamicProviders();
+        }
 
 		mContext = context;
 		mInflater = LayoutInflater.from(context);
@@ -95,12 +111,89 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 		persistedValue();
 	}
 
-	@Override
-	protected void onPrepareDialogBuilder (Builder builder) {
-		entries = getEntries();
-		entryValues = getEntryValues();
+    private void initDynamicProviders () {
+        try {
+            Class<DynamicEntriesProvider> dynamicEntriesProviderClass = (Class<DynamicEntriesProvider>) Class.forName(dynamicEntriesProviderName);
+            Class<DynamicEntryValuesProvider> dynamicEntryValuesProviderClass = (Class<DynamicEntryValuesProvider>) Class.forName(dynamicEntryValuesProviderName);
 
-		if (entries == null || entryValues == null || entries.length != entryValues.length) {
+            try {
+                mDynamicEntriesProvider = dynamicEntriesProviderClass.getDeclaredConstructor().newInstance();
+                mDynamicEntryValuesProvider = dynamicEntryValuesProviderClass.getDeclaredConstructor().newInstance();
+
+                processDynamicEntries();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            }
+
+        } catch (ClassNotFoundException e) {
+            Log.e(TAG, String.format("Could not find class '%s'. Will not load dynamic providers!", dynamicEntriesProviderName));
+        } catch (InstantiationException e) {
+            Log.e(TAG, e.getMessage());
+        } catch (IllegalAccessException e) {
+            Log.e(TAG, e.getMessage());
+        }
+    }
+
+    private void processDynamicEntries () {
+        mEntries = getEntries();
+        mEntryValues = getEntryValues();
+
+        if (mDynamicEntriesProvider != null && mDynamicEntryValuesProvider != null) {
+            //first populate the items on each provider
+            mDynamicEntryValuesProvider.populate();
+            mDynamicEntriesProvider.populate();
+            List<String> entries = mDynamicEntriesProvider.getItems();
+            List<String> entryValues = mDynamicEntryValuesProvider.getItems();
+
+            if (entries != null && entryValues != null && !entries.isEmpty() && !entryValues.isEmpty()) {
+                CharSequence[] dynamicEntries = entries.toArray(new CharSequence[entries.size()]);
+                CharSequence[] dynamicEntryValues = entryValues.toArray(new CharSequence[entryValues.size()]);
+
+                //if either of the android attributes for specifying the entries and their values have been left empty, then ignore both and use only the dynamic providers
+                if (mEntries == null || mEntryValues == null) {
+                    mEntries = dynamicEntries;
+                    mEntryValues = dynamicEntryValues;
+                } else {
+                    CharSequence[] fullEntriesList = new CharSequence[mEntries.length + dynamicEntries.length];
+                    CharSequence[] fullEntryValuesList = new CharSequence[mEntryValues.length + dynamicEntryValues.length];
+
+                    int i = 0, j = 0;
+                    for (i = 0 ; i <= mEntries.length - 1 ; i++) {
+                        fullEntriesList[i] = mEntries[i];
+                        fullEntryValuesList[i] = mEntryValues[i];
+                    }
+
+                    for (i = mEntries.length, j = 0 ; j <= dynamicEntries.length - 1 ; i++, j++) {
+                        fullEntriesList[i] = dynamicEntries[j];
+                        fullEntryValuesList[i] = dynamicEntryValues[j];
+                    }
+                    //replace the entries and entryValues arrays with the new lists
+                    mEntries = fullEntriesList;
+                    mEntryValues = fullEntryValuesList;
+
+                    setEntries(mEntries);
+                    setEntryValues(mEntryValues);
+
+                    dynamicEntries = null;
+                    dynamicEntryValues = null;
+                    fullEntriesList = null;
+                    fullEntryValuesList = null;
+                }
+            }
+
+            entries = null;
+            entryValues = null;
+        }
+    }
+
+    @Override
+	protected void onPrepareDialogBuilder (Builder builder) {
+		mEntries = getEntries();
+		mEntryValues = getEntryValues();
+
+		if (mEntries == null || mEntryValues == null || mEntries.length != mEntryValues.length) {
 			throw new IllegalStateException("ListPreference requires an entries array and an entryValues array which are both the same length");
 		}
 
@@ -116,7 +209,7 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 			}
 		}).setPositiveButton(R.string.done, new DialogInterface.OnClickListener() {
 			public void onClick (DialogInterface dialog, int which) {
-				setTypedValue((String) entryValues[mSelectedItemIndex]);
+				setTypedValue((String) mEntryValues[mSelectedItemIndex]);
 
 				dialog.dismiss();
 			}
@@ -181,7 +274,7 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 		}
 
 		public int getCount () {
-			return entries.length;
+			return mEntries.length;
 		}
 
 		public Object getItem (int position) {
@@ -219,21 +312,21 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 					// otherwise set this row to false
 					switch (mValuesDataType) {
 					case INT:
-						if (Integer.valueOf((String) entryValues[position]) == Integer.valueOf(lockedValues[i].toString())) {
+						if (Integer.valueOf((String) mEntryValues[position]) == Integer.valueOf(lockedValues[i].toString())) {
 							if (!lockedValueDependencyKeyValue) {
 								locked = true;
 							}
 						}
 						break;
 					case FLOAT:
-						if (Float.valueOf((String) entryValues[position]) == Float.valueOf(lockedValues[i].toString())) {
+						if (Float.valueOf((String) mEntryValues[position]) == Float.valueOf(lockedValues[i].toString())) {
 							if (!lockedValueDependencyKeyValue) {
 								locked = true;
 							}
 						}
 						break;
 					case LONG:
-						if (Long.valueOf((String) entryValues[position]) == Long.valueOf(lockedValues[i].toString())) {
+						if (Long.valueOf((String) mEntryValues[position]) == Long.valueOf(lockedValues[i].toString())) {
 							if (!lockedValueDependencyKeyValue) {
 								locked = true;
 							}
@@ -241,7 +334,7 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 						break;
 					case 0:
 					default:
-						if (entryValues[position].equals(lockedValues[i].toString())) {
+						if (mEntryValues[position].equals(lockedValues[i].toString())) {
 							if (!lockedValueDependencyKeyValue) {
 								locked = true;
 							}
@@ -270,7 +363,7 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 				row.setOnClickListener(new View.OnClickListener() {
 					public void onClick (View v) {
 						mSelectedItemIndex = position;
-						setTypedValue((String) entryValues[position]);
+						setTypedValue((String) mEntryValues[position]);
 
 						getDialog().dismiss();
 					}
@@ -283,44 +376,44 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 		private void setTextAndRadioButton (View row, int position) {
 			mTextView = (TextView) row.findViewById(R.id.custom_list_view_row_text_view);
 			mRadioButton = (RadioButton) row.findViewById(R.id.custom_list_view_row_radio_button);
-			mTextView.setText(entries[position]);
+			mTextView.setText(mEntries[position]);
 			mRadioButton.setId(position);
 
 			// is the mKey for this preference persisted?
 			if (mPrefs.contains(mKey)) {
 				//preferences contains this key but is the value blank since you could potentially have a row with value as ""
 				if (mPersistedStringValue != null && mPersistedStringValue.equals("")) {
-					if (entryValues[position].equals(mPersistedStringValue)) {
+					if (mEntryValues[position].equals(mPersistedStringValue)) {
 						mRadioButton.setChecked(true);
 						mSelectedItemIndex = position;
 
-						setTypedValue((String) entryValues[position]);
+						setTypedValue((String) mEntryValues[position]);
 					}
 				}
 				else {
 					// if yes, convert value according to data type and compare to see if this current row is the persisted value
 					switch (mValuesDataType) {
 					case INT:
-						if (Integer.valueOf((String) entryValues[position]) == mPersistedIntValue) {
+						if (Integer.valueOf((String) mEntryValues[position]) == mPersistedIntValue) {
 							mRadioButton.setChecked(true);
 							mSelectedItemIndex = position;
 						}
 						break;
 					case FLOAT:
-						if (Float.valueOf((String) entryValues[position]) == mPersistedFloatValue) {
+						if (Float.valueOf((String) mEntryValues[position]) == mPersistedFloatValue) {
 							mRadioButton.setChecked(true);
 							mSelectedItemIndex = position;
 						}
 						break;
 					case LONG:
-						if (Long.valueOf((String) entryValues[position]) == mPersistedLongValue) {
+						if (Long.valueOf((String) mEntryValues[position]) == mPersistedLongValue) {
 							mRadioButton.setChecked(true);
 							mSelectedItemIndex = position;
 						}
 						break;
 					case 0:
 					default:
-						if (entryValues[position].equals(mPersistedStringValue)) {
+						if (mEntryValues[position].equals(mPersistedStringValue)) {
 							mRadioButton.setChecked(true);
 							mSelectedItemIndex = position;
 						}
@@ -330,11 +423,11 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 			}
 			// otherwise, just check if the value in this position is the default value and set it in the preferences
 			else {
-				if (entryValues[position].equals(mDefaultValue)) {
+				if (mEntryValues[position].equals(mDefaultValue)) {
 					mRadioButton.setChecked(true);
 					mSelectedItemIndex = position;
 
-					setTypedValue((String) entryValues[position]);
+					setTypedValue((String) mEntryValues[position]);
 				}
 			}
 
@@ -343,7 +436,7 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 					if (isChecked) {
 						int index = buttonView.getId();
 						mSelectedItemIndex = index;
-						setTypedValue((String) entryValues[index]);
+						setTypedValue((String) mEntryValues[index]);
 
 						getDialog().dismiss();
 					}

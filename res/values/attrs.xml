@@ -3,9 +3,15 @@
     <attr name="lockedValues" format="reference"/>
     
     <attr name="lockedValuesDependencyKeys" format="reference"/>
+
+    <attr name="dynamicEntriesProvider" format="string"/>
+
+    <attr name="dynamicEntryValuesProvider" format="string"/>
     
 	<declare-styleable name="CustomListPreference">
 		<attr name="lockedValues" />
 		<attr name="lockedValuesDependencyKeys" />
+        <attr name="dynamicEntriesProvider" />
+        <attr name="dynamicEntryValuesProvider" />
 	</declare-styleable>
 </resources>
