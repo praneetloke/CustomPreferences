@@ -20,8 +20,7 @@ import android.widget.CompoundButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
-import com.myappfactory.interfaces.DynamicEntriesProvider;
-import com.myappfactory.interfaces.DynamicEntryValuesProvider;
+import com.myappfactory.interfaces.IDynamicProvider;
 import com.myappfactory.interfaces.IPurchase;
 import com.myappfactory.listpreference.R;
 
@@ -57,8 +56,8 @@ public class CustomListPreference extends ListPreference implements IPurchase {
     private String dynamicEntriesProviderName;
     private String dynamicEntryValuesProviderName;
 
-    private DynamicEntriesProvider mDynamicEntriesProvider;
-    private DynamicEntryValuesProvider mDynamicEntryValuesProvider;
+    private IDynamicProvider mDynamicProvider;
+    private IDynamicProvider mDynamicEntryValuesProvider;
 
 	/**
 	 * Finals
@@ -113,11 +112,11 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 
     private void initDynamicProviders () {
         try {
-            Class<DynamicEntriesProvider> dynamicEntriesProviderClass = (Class<DynamicEntriesProvider>) Class.forName(dynamicEntriesProviderName);
-            Class<DynamicEntryValuesProvider> dynamicEntryValuesProviderClass = (Class<DynamicEntryValuesProvider>) Class.forName(dynamicEntryValuesProviderName);
+            Class<IDynamicProvider> dynamicEntriesProviderClass = (Class<IDynamicProvider>) Class.forName(dynamicEntriesProviderName);
+            Class<IDynamicProvider> dynamicEntryValuesProviderClass = (Class<IDynamicProvider>) Class.forName(dynamicEntryValuesProviderName);
 
             try {
-                mDynamicEntriesProvider = dynamicEntriesProviderClass.getDeclaredConstructor().newInstance();
+                mDynamicProvider = dynamicEntriesProviderClass.getDeclaredConstructor().newInstance();
                 mDynamicEntryValuesProvider = dynamicEntryValuesProviderClass.getDeclaredConstructor().newInstance();
 
                 processDynamicEntries();
@@ -140,11 +139,11 @@ public class CustomListPreference extends ListPreference implements IPurchase {
         mEntries = getEntries();
         mEntryValues = getEntryValues();
 
-        if (mDynamicEntriesProvider != null && mDynamicEntryValuesProvider != null) {
+        if (mDynamicProvider != null && mDynamicEntryValuesProvider != null) {
             //first populate the items on each provider
             mDynamicEntryValuesProvider.populate();
-            mDynamicEntriesProvider.populate();
-            List<String> entries = mDynamicEntriesProvider.getItems();
+            mDynamicProvider.populate();
+            List<String> entries = mDynamicProvider.getItems();
             List<String> entryValues = mDynamicEntryValuesProvider.getItems();
 
             if (entries != null && entryValues != null && !entries.isEmpty() && !entryValues.isEmpty()) {
@@ -182,7 +181,6 @@ public class CustomListPreference extends ListPreference implements IPurchase {
                     fullEntryValuesList = null;
                 }
             }
-
             entries = null;
             entryValues = null;
         }
