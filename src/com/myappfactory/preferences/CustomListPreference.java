@@ -56,7 +56,7 @@ public class CustomListPreference extends ListPreference implements IPurchase {
     private String dynamicEntriesProviderName;
     private String dynamicEntryValuesProviderName;
 
-    private IDynamicProvider mDynamicProvider;
+    private IDynamicProvider mDynamicEntriesProvider;
     private IDynamicProvider mDynamicEntryValuesProvider;
 
 	/**
@@ -116,7 +116,7 @@ public class CustomListPreference extends ListPreference implements IPurchase {
             Class<IDynamicProvider> dynamicEntryValuesProviderClass = (Class<IDynamicProvider>) Class.forName(dynamicEntryValuesProviderName);
 
             try {
-                mDynamicProvider = dynamicEntriesProviderClass.getDeclaredConstructor().newInstance();
+                mDynamicEntriesProvider = dynamicEntriesProviderClass.getDeclaredConstructor().newInstance();
                 mDynamicEntryValuesProvider = dynamicEntryValuesProviderClass.getDeclaredConstructor().newInstance();
 
                 processDynamicEntries();
@@ -139,11 +139,11 @@ public class CustomListPreference extends ListPreference implements IPurchase {
         mEntries = getEntries();
         mEntryValues = getEntryValues();
 
-        if (mDynamicProvider != null && mDynamicEntryValuesProvider != null) {
+        if (mDynamicEntriesProvider != null && mDynamicEntryValuesProvider != null) {
             //first populate the items on each provider
             mDynamicEntryValuesProvider.populate();
-            mDynamicProvider.populate();
-            List<String> entries = mDynamicProvider.getItems();
+            mDynamicEntriesProvider.populate();
+            List<String> entries = mDynamicEntriesProvider.getItems();
             List<String> entryValues = mDynamicEntryValuesProvider.getItems();
 
             if (entries != null && entryValues != null && !entries.isEmpty() && !entryValues.isEmpty()) {
