@@ -1,5 +1,7 @@
 package com.myappfactory.interfaces;
 
+import android.content.Context;
+
 import java.util.List;
 
 /**
@@ -7,6 +9,7 @@ import java.util.List;
  */
 public interface IDynamicProvider {
     public int getCount ();
-    public List<String> getItems ();
+    public <T> List<T> getItems ();
     public void populate ();
+    public void populate (Context context);
 }

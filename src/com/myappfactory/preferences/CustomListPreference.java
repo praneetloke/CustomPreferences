@@ -174,15 +174,8 @@ public class CustomListPreference extends ListPreference implements IPurchase {
 
                     setEntries(mEntries);
                     setEntryValues(mEntryValues);
-
-                    dynamicEntries = null;
-                    dynamicEntryValues = null;
-                    fullEntriesList = null;
-                    fullEntryValuesList = null;
                 }
             }
-            entries = null;
-            entryValues = null;
         }
     }
 

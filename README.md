@@ -8,9 +8,9 @@ CustomPreferences is collection of (right now, only two) Android preference clas
 ###What does it do now?###
 - CustomListPreference
     - Allows locking individual list items.
-    - Store list items in a type you want so you don't have to manually type cast the values when retrieving from sharedpreferences every time.
+    - Store list items in a type you want so you don't have to manually type cast the values start retrieving from sharedpreferences every time.
     - Locked items will unlock using a dependency key check.
-    - Show a custom dialog when user selects a locked item.
+    - Show a custom dialog start user selects a locked item.
     - **NEW!** Append list items using a dynamic content provider much like how ListView's use an adapter to load data. This will work in conjuction with the static array resources that you would normally specify for a ListPreference. (An example will follow soon.)
 - TimePreference
     - Shows the standard OS time picker.
