@@ -123,7 +123,7 @@ public class CustomMultiSelectListPreference extends MultiSelectListPreference {
 
     @Override
     protected void onSetInitialValue(boolean restoreValue, Object defaultValue) {
-        if (selectAllValuesByDefault || mEntryValues != null) {
+        if (!restoreValue && selectAllValuesByDefault && mEntryValues != null) {
             final int valueCount = mEntryValues.length;
             final Set<String> result = new HashSet<String>();
 
@@ -131,7 +131,7 @@ public class CustomMultiSelectListPreference extends MultiSelectListPreference {
                 result.add(mEntryValues[i].toString());
             }
 
-            setValues(restoreValue ? result : (Set<String>) defaultValue);
+            setValues(result);
 
             return;
         }
